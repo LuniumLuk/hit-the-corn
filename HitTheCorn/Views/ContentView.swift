@@ -21,26 +21,40 @@ struct ContentView : View {
                     ARGameViewContainer(gameController.arView)
                     
                     VStack {
-                        Text("Score: \(gameController.score)")
-                            .fontWeight(.bold)
-                            .padding()
-                            .font(.title)
-                            .foregroundColor(Color.white)
-                            .shadow(color: .black, radius: 10, x: 0.0, y: 0.0)
-                        
-                        HStack(alignment: .center, spacing: 20) {
-                            ForEach(0..<levelColors.count) {
-                                Circle()
-                                    .strokeBorder(levelColors[$0], lineWidth: 5)
-                                    .background(Circle().fill(Color.white))
-                                    .opacity($0 > gameController.level ? 0.4 : 1.0)
-                                    .frame(width: 50, height: 50)
-                                    .overlay(Text("\($0 + 1)")
-                                                .font(.title2)
-                                                .opacity($0 > gameController.level ? 0.4 : 1.0)
-                                                .foregroundColor(levelColors[$0])
-                                    )
+                        HStack {
+                            Text("Score: \(gameController.score), Lives: \(gameController.lives)")
+                                .fontWeight(.bold)
+                                .padding()
+                                .font(.title)
+                                .foregroundColor(Color.white)
+                                .shadow(color: .black, radius: 10, x: 0.0, y: 0.0)
+                            Button("Restart") {
+                                gameController.gameIsEnded = true
                             }
+                        }
+                        
+                        if #available(iOS 15.0, *) {
+                            HStack(alignment: .center, spacing: 20) {
+                                ForEach(0..<levelColors.count) {
+                                    Circle()
+                                        .strokeBorder(levelColors[$0], lineWidth: 5)
+                                        .background(Circle().fill(Color.white))
+                                        .opacity($0 > gameController.level ? 0.4 : 1.0)
+                                        .frame(width: 50, height: 50)
+                                        .overlay(Text("\($0 + 1)")
+                                            .font(.title2)
+                                            .opacity($0 > gameController.level ? 0.4 : 1.0)
+                                            .foregroundColor(levelColors[$0])
+                                        )
+                                }
+                            }
+                            .alert("Game Ended, your score is \(gameController.score)", isPresented: $gameController.gameIsEnded) {
+                                Button("Restart", role: .cancel) {
+                                    gameController.restart()
+                                }
+                            }
+                        } else {
+                            // Fallback on earlier versions
                         }
                     }
                 }

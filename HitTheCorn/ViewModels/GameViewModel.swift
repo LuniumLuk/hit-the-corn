@@ -24,6 +24,16 @@ class GameController: ObservableObject {
             objectWillChange.send()
         }
     }
+    public var lives: Int = 5 {
+        didSet {
+            objectWillChange.send()
+        }
+    }
+    public var gameIsEnded: Bool = false {
+        didSet {
+            objectWillChange.send()
+        }
+    }
     
     private var timerCount: Int = 0
     
@@ -34,7 +44,9 @@ class GameController: ObservableObject {
     private let pointForEachLevel: [Int] = [10, 10, 15, 20, 25]
     private var timeTillNextAppear: Float = 0.0
     private var timeTillCurrentHide: Float = 0.0
+    private var timeTillCompleteHide: Float = 0.0
     private var cornHiding: Bool = false
+    private var cornIsHit: Bool = true
     private var cornRotateClockwise: Bool = false
     private var lastCornEntity: Entity? = nil
     // Audios
@@ -106,6 +118,8 @@ class GameController: ObservableObject {
                 self.timeTillNextAppear = Float.random(in: 2...3) * self.currentSpeed
                 let targetCornIndex = self.aliveCorn.randomElement()
                 self.timeTillCurrentHide = self.currentSpeed
+                self.timeTillCompleteHide = self.currentSpeed * 1.5
+                self.cornIsHit = false;
                 self.cornHiding = false
                 
                 if let corn = self.arView.scene.findEntity(named: "Corn No.\(targetCornIndex ?? 0)") {
@@ -130,14 +144,35 @@ class GameController: ObservableObject {
                     corn.move(to: transform, relativeTo: corn, duration: Double(self.currentSpeed / 2), timingFunction: .easeInOut)
                 }
             }
-            self.timeTillNextAppear -= 0.02
-            self.timeTillCurrentHide -= 0.02
-            self.timerCount += 1
+            if self.timeTillCompleteHide < 0.0 && !self.cornIsHit {
+                self.lives -= 1
+                if (self.lives <= 0) {
+                    self.gameIsEnded = true
+                }
+                self.cornIsHit = true
+            }
+            
+            if !self.gameIsEnded {
+                self.timeTillNextAppear -= 0.02
+                self.timeTillCurrentHide -= 0.02
+                self.timeTillCompleteHide -= 0.02
+                self.timerCount += 1
+            }
         }
+    }
+    
+    public func restart() {
+        level = 0
+        score = 0
+        lives = 5
+        currentSpeed = speedForEachLevel[level]
     }
     
     private func configureLevel() {
         if score >= pointsForNextLevel[level] {
+            if (level >= speedForEachLevel.count - 1) {
+                return
+            }
             level += 1
             currentSpeed = speedForEachLevel[level]
         }
@@ -152,6 +187,8 @@ class GameController: ObservableObject {
         if let hit = arView.entity(at: point) {
             print("Hit Entity Name: \(hit.name), current Corn: Corn No.\(lastCornAppear)")
             if hit.name == "Corn No.\(lastCornAppear)" {
+                
+                self.cornIsHit = true
                 
                 self.pingSound.playOrPause()
                 
